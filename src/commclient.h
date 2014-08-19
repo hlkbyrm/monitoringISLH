@@ -13,6 +13,10 @@
 #include <create_node/TurtlebotSensorState.h>
 #include <std_msgs/String.h>
 
+
+#define CAPACITY 16.5
+#define  DANGEROUS 13.2
+
 class RosThread;
 
 class CommClient : public QObject
@@ -29,11 +33,16 @@ public:
 
     RosThread* rosthread;
 
+    void sendWaitingMessages();
 private:
 
     QTcpSocket* socket;
 
+    QString recData;
+    QByteArray recDataBA;
+
     QString hostName;
+    QStringList waitingMessages;
 
     QAbstractSocket::SocketError clientSocketError;
 
@@ -45,6 +54,7 @@ private:
     ros::Subscriber robotPoseSub;
     ros::Subscriber robotInfoSub;
     ros::Subscriber robotConnSub;
+    ros::Publisher targetPosePublisher;
     ros::Timer timer;
     int battery;
 
@@ -62,6 +72,8 @@ private:
     int batteryLevel();
 
 signals:
+public slots:
+    void receiveData();
 private slots:
     void displaySocketError(QAbstractSocket::SocketError socketError);
 };

@@ -33,6 +33,7 @@ CommClient::CommClient(QObject* parent) :
 
     socket = new QTcpSocket(this);
     socket->setReadBufferSize(0);
+    connect(socket,SIGNAL(readyRead()),this,SLOT(receiveData()));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displaySocketError(QAbstractSocket::SocketError)));
     qDebug() << "Host IP is: " << IP;
     socket->connectToHost(IP,11000);
@@ -56,6 +57,8 @@ void CommClient::setRosthread(RosThread* rosthread){
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackTurtlebot,this);
     this->robotPoseSub = this->rosthread->n.subscribe("robot_position_info",1,&CommClient::robotPoseCallback,this);
     this->robotConnSub = this->rosthread->n.subscribe("robot_connection_info",1,&CommClient::robotConnCallback,this);
+
+    this->targetPosePublisher = this->rosthread->n.advertise<geometry_msgs::PoseArray>("targetPoseList", 1000);
 }
 
 void CommClient::timerTick(const ros::TimerEvent&){
@@ -69,11 +72,7 @@ void CommClient::timerTick(const ros::TimerEvent&){
     message.append(QString::number((batteryLevel())));
     message.append("<EOF>");
 
-    QByteArray byteArray = message.toUtf8();
-    socket->write(byteArray); //write the data itself
-    socket->waitForBytesWritten();
-    qDebug() << "written";
-    qDebug() << message;
+    waitingMessages.push_back(message);
 }
 
 int CommClient::batteryLevel(){
@@ -92,9 +91,7 @@ void CommClient::robotInfoCallbackKobuki(const kobuki_msgs::SensorState::ConstPt
     if(!connected) return;
 
     float voltage = msg->battery/10.0;
-    float capacity = 16.5;
-    float dangerous = 13.2;
-    float percent = ((95*(voltage-dangerous)) / (capacity-dangerous)) + 5;
+    float percent = ((95*(voltage-DANGEROUS)) / (CAPACITY-DANGEROUS)) + 5;
 
     battery = (int)std::max(std::min(percent,100.0f),0.0f);
 }
@@ -122,11 +119,23 @@ void CommClient::robotPoseCallback(const monitoringISLH::robotPose::ConstPtr &ms
     message.append(QString::number(msg->calYaw));
     message.append("<EOF>");
 
-    QByteArray byteArray = message.toUtf8();
-    socket->write(byteArray); //write the data itself
-    socket->waitForBytesWritten();
-    qDebug() << "written";
-    qDebug() << message;
+    waitingMessages.push_back(message);
+}
+
+void CommClient::sendWaitingMessages(){
+    if(waitingMessages.count() == 0) return;
+    QStringList _waitingMessages = QStringList(waitingMessages);
+    waitingMessages.clear();
+
+    for(int i=0;i<_waitingMessages.count();i++){
+        qDebug()<<"writing";
+        QByteArray byteArray;
+        byteArray.append(_waitingMessages[i]);
+        socket->waitForBytesWritten(500);
+        socket->write(byteArray); //write the data itself
+        qDebug() << _waitingMessages[i];
+        qDebug() << "written";
+    }
 }
 
 void CommClient::robotConnCallback(const std_msgs::String::ConstPtr &msg){
@@ -136,11 +145,7 @@ void CommClient::robotConnCallback(const std_msgs::String::ConstPtr &msg){
     message.append(QString::fromStdString(msg->data));
     message.append("<EOF>");
 
-    QByteArray byteArray = message.toUtf8();
-    socket->write(byteArray); //write the data itself
-    socket->waitForBytesWritten();
-    qDebug() << "written";
-    qDebug() << message;
+    waitingMessages.push_back(message);
 }
 
 // Displays socket error in a MessageBox
@@ -148,6 +153,7 @@ void CommClient::displaySocketError(QAbstractSocket::SocketError socketError){
     qDebug()<<"Socket Error!!!";
     return;
 }
+
 int CommClient::readConfigFile(QString filename)
 {
     QFile file(filename);
@@ -188,8 +194,37 @@ int CommClient::readConfigFile(QString filename)
     return true;
 }
 
+void CommClient::receiveData(){
+    recDataBA = socket->readAll();
+    recData = QString::fromAscii(recDataBA);
+    QStringList list = recData.split(";",QString::SkipEmptyParts);
+
+    // Incoming data parts
+    qDebug()<<"Number of incoming data parts"<<list.size();
+    qDebug()<<list;
+
+    geometry_msgs::PoseArray robotTargetArray;
+
+    if(list.at(0) == "AA" && list.size() == (1 + numOfRobots))
+    {
+        for(int i = 1; i < list.size(); i++){
+            qDebug()<<list[i]<<" "<<i;
+
+            QStringList valsList = list[i].split(",",QString::SkipEmptyParts);
+            qDebug()<< valsList;
+
+            geometry_msgs::Pose robotPose;
+            robotPose.position.x = valsList.at(0).toFloat();
+            robotPose.position.y = valsList.at(1).toFloat();
+            robotTargetArray.poses.push_back(robotPose);
+        }
+        this->targetPosePublisher.publish(robotTargetArray);
+    }
+
+    recData.clear();
+    recDataBA.clear();
+}
+
 CommClient::~CommClient()
 {
-
-
 }

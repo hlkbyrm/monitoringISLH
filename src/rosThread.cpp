@@ -28,6 +28,10 @@ void RosThread::work(){
     ros::Rate loop(30);
 
     while(ros::ok()){
+        if(commclient!=NULL)
+            commclient->sendWaitingMessages();
+
+
         ros::spinOnce();
         loop.sleep();
     }

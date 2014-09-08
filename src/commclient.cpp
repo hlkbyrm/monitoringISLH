@@ -48,7 +48,7 @@ CommClient::CommClient(QObject* parent) :
 void CommClient::setRosthread(RosThread* rosthread){
     this->rosthread = rosthread;
 
-    timer = this->rosthread->n.createTimer(ros::Duration(1),&CommClient::timerTick,this);
+    timer = this->rosthread->n.createTimer(ros::Duration(4),&CommClient::timerTick,this);
     timer.start();
 
     if(isKobuki)
@@ -129,10 +129,9 @@ void CommClient::sendWaitingMessages(){
 
     for(int i=0;i<_waitingMessages.count();i++){
         qDebug()<<"writing";
-        QByteArray byteArray;
-        byteArray.append(_waitingMessages[i]);
-        socket->waitForBytesWritten(500);
+        QByteArray byteArray(_waitingMessages.at(i).toLatin1());
         socket->write(byteArray); //write the data itself
+        socket->waitForBytesWritten(500);
         qDebug() << _waitingMessages[i];
         qDebug() << "written";
     }

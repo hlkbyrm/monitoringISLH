@@ -100,7 +100,7 @@ void CommClient::robotInfoCallbackTurtlebot(const create_node::TurtlebotSensorSt
     battery = msg->charge * 100 / msg->capacity;
 }
 
-void CommClient::robotPoseCallback(const monitoringISLH::robotPose::ConstPtr &msg){
+void CommClient::robotPoseCallback(const ISLH_msgs::robotPose::ConstPtr &msg){
     if(!connected) return;
 
     QString message = "pos$";

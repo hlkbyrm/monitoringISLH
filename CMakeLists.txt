@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   geometry_msgs
-  message_generation
+  ISLH_msgs
 )
 
 ######################################################### FROM ROSBUILD
@@ -29,17 +29,8 @@ SET(qt_SOURCES src/rosThread.cpp src/commclient.cpp)
 QT4_WRAP_CPP(qt_HEADERS_MOC ${qt_HEADERS})
 qt4_automoc(${qt_SOURCES})
 
-add_message_files(
-  DIRECTORY msg
-  FILES
-  robotPose.msg
-)
-generate_messages(
-  DEPENDENCIES
-  geometry_msgs
-)
 catkin_package(
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS ISLH_msgs
 )
 
 add_library(${PROJECT_NAME} src/main.cpp)

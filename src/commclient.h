@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <kobuki_msgs/SensorState.h>
-#include "monitoringISLH/robotPose.h"
+#include "ISLH_msgs/robotPose.h"
 #include <create_node/TurtlebotSensorState.h>
 #include <std_msgs/String.h>
 
@@ -63,7 +63,7 @@ private:
 
     int readConfigFile(QString filename);
 
-    void robotPoseCallback(const monitoringISLH::robotPose::ConstPtr &msg);
+    void robotPoseCallback(const ISLH_msgs::robotPose::ConstPtr &msg);
     void robotInfoCallbackKobuki(const kobuki_msgs::SensorState::ConstPtr &msg);
     void robotInfoCallbackTurtlebot(const create_node::TurtlebotSensorState::ConstPtr &msg);
     void robotConnCallback(const std_msgs::String::ConstPtr &msg);

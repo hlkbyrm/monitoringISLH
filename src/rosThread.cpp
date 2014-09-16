@@ -25,7 +25,7 @@ void RosThread::work(){
 
     emit rosStarted();
 
-    ros::Rate loop(30);
+    ros::Rate loop(3);
 
     while(ros::ok()){
         if(commclient!=NULL)

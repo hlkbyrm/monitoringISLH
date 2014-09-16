@@ -131,8 +131,8 @@ void CommClient::sendWaitingMessages(){
         qDebug()<<"writing";
         QByteArray byteArray(_waitingMessages.at(i).toLatin1());
         socket->write(byteArray); //write the data itself
-        socket->waitForBytesWritten(500);
         qDebug() << _waitingMessages[i];
+        //bool asd = socket->waitForBytesWritten(500);
         qDebug() << "written";
     }
 }

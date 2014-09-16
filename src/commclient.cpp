@@ -55,10 +55,10 @@ void CommClient::setRosthread(RosThread* rosthread){
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackKobuki,this);
     else
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackTurtlebot,this);
-    this->robotPoseSub = this->rosthread->n.subscribe("robot_position_info",1,&CommClient::robotPoseCallback,this);
-    this->robotConnSub = this->rosthread->n.subscribe("robot_connection_info",1,&CommClient::robotConnCallback,this);
+    this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",1,&CommClient::robotPoseCallback,this);
+    this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",1,&CommClient::robotConnCallback,this);
 
-    this->targetPosePublisher = this->rosthread->n.advertise<geometry_msgs::PoseArray>("targetPoseList", 1000);
+    this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", 1000);
 }
 
 void CommClient::timerTick(const ros::TimerEvent&){
@@ -202,22 +202,22 @@ void CommClient::receiveData(){
     qDebug()<<"Number of incoming data parts"<<list.size();
     qDebug()<<list;
 
-    geometry_msgs::PoseArray robotTargetArray;
-
     if(list.at(0) == "AA" && list.size() == (1 + numOfRobots))
     {
+        ISLH_msgs::targetPoseListMessage robotTargetMsg;
         for(int i = 1; i < list.size(); i++){
             qDebug()<<list[i]<<" "<<i;
 
             QStringList valsList = list[i].split(",",QString::SkipEmptyParts);
             qDebug()<< valsList;
 
-            geometry_msgs::Pose robotPose;
-            robotPose.position.x = valsList.at(0).toFloat();
-            robotPose.position.y = valsList.at(1).toFloat();
-            robotTargetArray.poses.push_back(robotPose);
+            geometry_msgs::Pose2D robotPose;
+            robotPose.x = valsList.at(0).toFloat();
+            robotPose.y = valsList.at(1).toFloat();
+            robotTargetMsg.robotIDs.push_back(i);
+            robotTargetMsg.targetPoses.push_back(robotPose);
         }
-        this->targetPosePublisher.publish(robotTargetArray);
+        this->targetPosePublisher.publish(robotTargetMsg);
     }
 
     recData.clear();

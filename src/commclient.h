@@ -10,6 +10,7 @@
 #include <geometry_msgs/Pose.h>
 #include <kobuki_msgs/SensorState.h>
 #include "ISLH_msgs/robotPose.h"
+#include "ISLH_msgs/targetPoseListMessage.h"
 #include <create_node/TurtlebotSensorState.h>
 #include <std_msgs/String.h>
 

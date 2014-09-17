@@ -59,7 +59,7 @@ void CommClient::setRosthread(RosThread* rosthread){
     this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",1,&CommClient::robotConnCallback,this);
 
     this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", 1000);
-    this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/targetPoseList", 1000);
+    this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/startMission", 1000);
 }
 
 void CommClient::timerTick(const ros::TimerEvent&){

@@ -11,6 +11,7 @@
 #include <kobuki_msgs/SensorState.h>
 #include "ISLH_msgs/robotPose.h"
 #include "ISLH_msgs/targetPoseListMessage.h"
+#include <std_msgs/UInt8.h>
 #include <create_node/TurtlebotSensorState.h>
 #include <std_msgs/String.h>
 
@@ -56,6 +57,7 @@ private:
     ros::Subscriber robotInfoSub;
     ros::Subscriber robotConnSub;
     ros::Publisher targetPosePublisher;
+    ros::Publisher startMissionPublisher;
     ros::Timer timer;
     int battery;
 

@@ -59,6 +59,7 @@ void CommClient::setRosthread(RosThread* rosthread){
     this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",1,&CommClient::robotConnCallback,this);
 
     this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", 1000);
+    this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/targetPoseList", 1000);
 }
 
 void CommClient::timerTick(const ros::TimerEvent&){
@@ -202,22 +203,35 @@ void CommClient::receiveData(){
     qDebug()<<"Number of incoming data parts"<<list.size();
     qDebug()<<list;
 
-    if(list.at(0) == "AA" && list.size() == (1 + numOfRobots))
+    if(list.size() > 1 && list.at(0) == "AA")
     {
-        ISLH_msgs::targetPoseListMessage robotTargetMsg;
-        for(int i = 1; i < list.size(); i++){
-            qDebug()<<list[i]<<" "<<i;
-
-            QStringList valsList = list[i].split(",",QString::SkipEmptyParts);
-            qDebug()<< valsList;
-
-            geometry_msgs::Pose2D robotPose;
-            robotPose.x = valsList.at(0).toFloat();
-            robotPose.y = valsList.at(1).toFloat();
-            robotTargetMsg.robotIDs.push_back(i);
-            robotTargetMsg.targetPoses.push_back(robotPose);
+        if(list.at(1) == "run"){
+            std_msgs::UInt8 msg;
+            msg.data = 1;
+            startMissionPublisher.publish(msg);
         }
-        this->targetPosePublisher.publish(robotTargetMsg);
+        else if(list.at(1) == "stop"){
+            std_msgs::UInt8 msg;
+            msg.data = 0;
+            startMissionPublisher.publish(msg);
+
+        }
+        else if(list.size() == (1 + numOfRobots)){
+            ISLH_msgs::targetPoseListMessage robotTargetMsg;
+            for(int i = 1; i < list.size(); i++){
+                qDebug()<<list[i]<<" "<<i;
+
+                QStringList valsList = list[i].split(",",QString::SkipEmptyParts);
+                qDebug()<< valsList;
+
+                geometry_msgs::Pose2D robotPose;
+                robotPose.x = valsList.at(0).toFloat();
+                robotPose.y = valsList.at(1).toFloat();
+                robotTargetMsg.robotIDs.push_back(i);
+                robotTargetMsg.targetPoses.push_back(robotPose);
+            }
+            this->targetPosePublisher.publish(robotTargetMsg);
+        }
     }
 
     recData.clear();

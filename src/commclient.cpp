@@ -57,6 +57,8 @@ void CommClient::setRosthread(RosThread* rosthread){
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackTurtlebot,this);
     this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",1,&CommClient::robotPoseCallback,this);
     this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",1,&CommClient::robotConnCallback,this);
+    this->taskInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/taskInfo2Monitor",1,&CommClient::taskInfoCallback,this);
+    this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIdInfo2Monitor",1,&CommClient::leaderInfoCallback,this);
 
     this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", 1000);
     this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/startMission", 1000);
@@ -143,6 +145,112 @@ void CommClient::robotConnCallback(const std_msgs::String::ConstPtr &msg){
     message.append(QString::number((robotID)));
     message.append("$");
     message.append(QString::fromStdString(msg->data));
+    message.append("<EOF>");
+
+    waitingMessages.push_back(message);
+}
+
+void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::ConstPtr &msg){
+    QString message = "task$";
+    bool flag = false;
+    foreach(taskProp task,tasks){
+        if(task.taskUUID == QString::fromStdString(msg->taskUUID)){
+            flag = true;
+
+            message.append(QString::fromStdString(msg->taskUUID));
+            message.append("$");
+            if(task.encounteringRobotID != msg->encounteringRobotID)
+                message.append(QString::number(msg->encounteringRobotID));
+            message.append("$");
+            if(task.encounteringTime != msg->encounteringTime)
+                message.append(QString::number(msg->encounteringTime));
+            message.append("$");
+            if(task.handlingDuration != msg->handlingDuration)
+                message.append(QString::number(msg->handlingDuration));
+            message.append("$");
+            if(task.pose.x != msg->posXY.x)
+                message.append(QString::number(msg->posXY.x));
+            message.append("$");
+            if(task.pose.y != msg->posXY.y)
+                message.append(QString::number(msg->posXY.y));
+            message.append("$");
+            if(task.requiredResourcesString != QString::fromStdString(msg->taskResource))
+                message.append(QString::fromStdString(msg->taskResource));
+            message.append("$");
+            if(task.responsibleUnit != msg->responsibleUnit)
+                message.append(QString::number(msg->responsibleUnit));
+            message.append("$");
+            if(task.startHandlingTime != msg->startHandlingTime)
+                message.append(QString::number(msg->startHandlingTime));
+            message.append("$");
+            if(task.status != msg->status)
+                message.append(QString::number(msg->status));
+            message.append("$");
+            if(task.timedOutDuration != msg->timeOutDuration)
+                message.append(QString::number(msg->timeOutDuration));
+            message.append("<EOF>");
+
+            task.encounteringRobotID = msg->encounteringRobotID;
+            task.encounteringTime = msg->encounteringTime;
+            task.handlingDuration = msg->handlingDuration;
+            task.pose = msg->posXY;
+            task.requiredResourcesString = QString::fromStdString(msg->taskResource);
+            task.responsibleUnit = msg->responsibleUnit;
+            task.startHandlingTime = msg->startHandlingTime;
+            task.status = msg->status;
+            task.taskUUID = QString::fromStdString(msg->taskUUID);
+            task.timedOutDuration = msg->timeOutDuration;
+
+            break;
+        }
+    }
+    if(!flag){
+        taskProp task;
+        task.encounteringRobotID = msg->encounteringRobotID;
+        task.encounteringTime = msg->encounteringTime;
+        task.handlingDuration = msg->handlingDuration;
+        task.pose = msg->posXY;
+        task.requiredResourcesString = QString::fromStdString(msg->taskResource);
+        task.responsibleUnit = msg->responsibleUnit;
+        task.startHandlingTime = msg->startHandlingTime;
+        task.status = msg->status;
+        task.taskUUID = QString::fromStdString(msg->taskUUID);
+        task.timedOutDuration = msg->timeOutDuration;
+        tasks.push_back(task);
+
+        message.append(task.taskUUID);
+        message.append("$");
+        message.append(QString::number(task.encounteringRobotID));
+        message.append("$");
+        message.append(QString::number(task.encounteringTime));
+        message.append("$");
+        message.append(QString::number(task.handlingDuration));
+        message.append("$");
+        message.append(QString::number(task.pose.x));
+        message.append("$");
+        message.append(QString::number(task.pose.y));
+        message.append("$");
+        message.append(task.requiredResourcesString);
+        message.append("$");
+        message.append(QString::number(task.responsibleUnit));
+        message.append("$");
+        message.append(QString::number(task.startHandlingTime));
+        message.append("$");
+        message.append(QString::number(task.status));
+        message.append("$");
+        message.append(QString::number(task.timedOutDuration));
+        message.append("<EOF>");
+    }
+
+    waitingMessages.push_back(message);
+}
+
+void CommClient::leaderInfoCallback(const std_msgs::Int8MultiArray::ConstPtr &msg){
+    QString message = "lead";
+    foreach(int8_t id,msg->data){
+        message.append("$");
+        message.append(QString::number(id));
+    }
     message.append("<EOF>");
 
     waitingMessages.push_back(message);

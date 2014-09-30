@@ -73,6 +73,8 @@ private:
     ros::Subscriber robotConnSub;
     ros::Subscriber taskInfoSub;
     ros::Subscriber leaderInfoSub;
+    ros::Subscriber coalInfoSub;
+    ros::Subscriber taskHandlerInfoSub;
     ros::Publisher targetPosePublisher;
     ros::Publisher startMissionPublisher;
     ros::Timer timer;
@@ -81,6 +83,7 @@ private:
     QVector<taskProp> tasks;
 
     int numOfRobots;
+    int queueSize;
 
     int readConfigFile(QString filename);
 
@@ -90,6 +93,8 @@ private:
     void robotConnCallback(const std_msgs::String::ConstPtr &msg);
     void taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::ConstPtr &msg);
     void leaderInfoCallback(const std_msgs::Int8MultiArray::ConstPtr &msg);
+    void coalInfoCallback(const std_msgs::UInt8::ConstPtr &msg);
+    void taskHandlerInfoCallback(const std_msgs::UInt8::ConstPtr &msg);
     void timerTick(const ros::TimerEvent&);
 
     int batteryLevel();

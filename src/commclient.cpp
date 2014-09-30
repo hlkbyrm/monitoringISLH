@@ -52,16 +52,38 @@ void CommClient::setRosthread(RosThread* rosthread){
     timer.start();
 
     if(isKobuki)
-        this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackKobuki,this);
+        this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",queueSize,&CommClient::robotInfoCallbackKobuki,this);
     else
-        this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",1,&CommClient::robotInfoCallbackTurtlebot,this);
-    this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",1,&CommClient::robotPoseCallback,this);
-    this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",1,&CommClient::robotConnCallback,this);
-    this->taskInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/taskInfo2Monitor",1,&CommClient::taskInfoCallback,this);
-    this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIdInfo2Monitor",1,&CommClient::leaderInfoCallback,this);
+        this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",queueSize,&CommClient::robotInfoCallbackTurtlebot,this);
+    this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",queueSize,&CommClient::robotPoseCallback,this);
+    this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",queueSize,&CommClient::robotConnCallback,this);
+    this->taskInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/taskInfo2Monitor",queueSize,&CommClient::taskInfoCallback,this);
+    this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIdInfo2Monitor",queueSize,&CommClient::leaderInfoCallback,this);
+    this->coalInfoSub = this->rosthread->n.subscribe("coalitionLeaderISLH/coalStateInfo2Monitor",queueSize,&CommClient::coalInfoCallback,this);
+    this->taskHandlerInfoSub = this->rosthread->n.subscribe("taskHandlerISLH/robotInfo2Monitor",queueSize,&CommClient::taskHandlerInfoCallback,this);
 
-    this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", 1000);
-    this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/startMission", 1000);
+    this->targetPosePublisher = this->rosthread->n.advertise<ISLH_msgs::targetPoseListMessage>("monitoringISLH/targetPoseList", queueSize);
+    this->startMissionPublisher = this->rosthread->n.advertise<std_msgs::UInt8>("monitoringISLH/startMission", queueSize);
+}
+
+void CommClient::coalInfoCallback(const std_msgs::UInt8::ConstPtr &msg){
+    QString message = "coal$";
+    message.append(QString::number((robotID)));
+    message.append("$");
+    message.append(QString::number((msg->data)));
+    message.append("<EOF>");
+
+    waitingMessages.push_back(message);
+}
+
+void CommClient::taskHandlerInfoCallback(const std_msgs::UInt8::ConstPtr &msg){
+    QString message = "rob$";
+    message.append(QString::number((robotID)));
+    message.append("$");
+    message.append(QString::number((msg->data)));
+    message.append("<EOF>");
+
+    waitingMessages.push_back(message);
 }
 
 void CommClient::timerTick(const ros::TimerEvent&){
@@ -297,6 +319,9 @@ int CommClient::readConfigFile(QString filename)
 
         isKobuki = result["isKobuki"].toInt() == 1;
         qDebug()<<result["isKobuki"].toString();
+
+        queueSize = result["queueSize"].toInt();
+        qDebug()<<result["queueSize"].toString();
     }
     file.close();
     return true;

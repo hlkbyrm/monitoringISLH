@@ -34,6 +34,7 @@ struct taskProp{
     uint startHandlingTime; // in timestamp - "the time when the task starts being handled"
     geometry_msgs::Point pose; // the location of the task
     QString requiredResourcesString;
+    int taskSiteRadius;
 };
 
 class CommClient : public QObject

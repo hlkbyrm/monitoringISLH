@@ -58,7 +58,7 @@ void CommClient::setRosthread(RosThread* rosthread){
     this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",queueSize,&CommClient::robotPoseCallback,this);
     this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",queueSize,&CommClient::robotConnCallback,this);
     this->taskInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/taskInfo2Monitor",queueSize,&CommClient::taskInfoCallback,this);
-    this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIdInfo2Monitor",queueSize,&CommClient::leaderInfoCallback,this);
+    this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIDInfo2Monitor",queueSize,&CommClient::leaderInfoCallback,this);
     this->coalInfoSub = this->rosthread->n.subscribe("coalitionLeaderISLH/coalStateInfo2Monitor",queueSize,&CommClient::coalInfoCallback,this);
     this->taskHandlerInfoSub = this->rosthread->n.subscribe("taskHandlerISLH/robotInfo2Monitor",queueSize,&CommClient::taskHandlerInfoCallback,this);
 
@@ -210,6 +210,9 @@ void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::Cons
             message.append("$");
             if(task.timedOutDuration != msg->timeOutDuration)
                 message.append(QString::number(msg->timeOutDuration));
+            message.append("$");
+            if(task.taskSiteRadius != msg->taskSiteRadius)
+                message.append(QString::number(msg->taskSiteRadius));
             message.append("<EOF>");
 
             task.encounteringRobotID = msg->encounteringRobotID;
@@ -222,6 +225,7 @@ void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::Cons
             task.status = msg->status;
             task.taskUUID = QString::fromStdString(msg->taskUUID);
             task.timedOutDuration = msg->timeOutDuration;
+            task.taskSiteRadius = msg->taskSiteRadius;
 
             break;
         }
@@ -238,6 +242,7 @@ void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::Cons
         task.status = msg->status;
         task.taskUUID = QString::fromStdString(msg->taskUUID);
         task.timedOutDuration = msg->timeOutDuration;
+        task.taskSiteRadius = msg->taskSiteRadius;
         tasks.push_back(task);
 
         message.append(task.taskUUID);
@@ -261,6 +266,8 @@ void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::Cons
         message.append(QString::number(task.status));
         message.append("$");
         message.append(QString::number(task.timedOutDuration));
+        message.append("$");
+        message.append(QString::number(task.taskSiteRadius));
         message.append("<EOF>");
     }
 

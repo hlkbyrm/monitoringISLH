@@ -38,6 +38,7 @@ int main(int argc,char** argv)
     QObject::connect(&thr,SIGNAL(started()),rosthread,SLOT(work()));
 
     thr.start();
+    thr2.start();
 
 
     return app.exec();

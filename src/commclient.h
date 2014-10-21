@@ -55,6 +55,7 @@ public:
 
     QMutex mutex;
 private:
+    bool written;
 
     QTcpSocket* socket;
 
@@ -109,6 +110,7 @@ public slots:
     void receiveData();
 private slots:
     void displaySocketError(QAbstractSocket::SocketError socketError);
+    void bytesWritten(qint64 bytenum);
 };
 
 #endif // COMMCLIENT_H

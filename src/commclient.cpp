@@ -17,6 +17,8 @@
 CommClient::CommClient(QObject* parent) :
     QObject(parent)
 {
+    written = true;
+
     connected = false;
     QString path = QDir::homePath();
     path.append("/ISL_workspace/src/configISL.json");
@@ -36,6 +38,7 @@ CommClient::CommClient(QObject* parent) :
     socket = new QTcpSocket(this);
     socket->setReadBufferSize(0);
     connect(socket,SIGNAL(readyRead()),this,SLOT(receiveData()));
+    connect(socket,SIGNAL(bytesWritten(qint64)),this,SLOT(bytesWritten(qint64)));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displaySocketError(QAbstractSocket::SocketError)));
     qDebug() << "Host IP is: " << IP;
     socket->connectToHost(IP,11000);
@@ -154,31 +157,42 @@ void CommClient::robotPoseCallback(const ISLH_msgs::robotPose::ConstPtr &msg){
 }
 
 void CommClient::sendWaitingMessages(){
-    QMutexLocker ml(&mutex);
+    qDebug() << written;
+    if(written){
+        QMutexLocker ml(&mutex);
 
-    if(waitingMessages.count() == 0) return;
-    QStringList _waitingMessages;
+        if(waitingMessages.count() == 0) return;
+        QStringList _waitingMessages;
 
-    foreach(QString str,waitingMessages)
-        _waitingMessages.push_back(str);
+        foreach(QString str,waitingMessages)
+            _waitingMessages.push_back(str);
 
-    waitingMessages.clear();
+        waitingMessages.clear();
 
-    ml.unlock();
+        ml.unlock();
 
-    for(int i=0;i<_waitingMessages.count();i++){
-        qDebug()<<"writing";
-        QByteArray byteArray = QByteArray(_waitingMessages.at(i).toLatin1());
+        QString str;
+        for(int i=0;i<_waitingMessages.count();i++)
+            str.append(_waitingMessages.at(i));
+
+        if(str.size() == 0)
+            return;
+
+        written = false;
+
+        QByteArray byteArray = QByteArray(str.toLatin1());
         int writtenBytes = socket->write(byteArray);
-        qDebug() << _waitingMessages[i];
 
-        qDebug() << "written" <<writtenBytes<<" of "<<_waitingMessages.at(i).size();
+        qDebug()<<"writing";
+        qDebug() << str;
 
-        if (!socket->waitForBytesWritten(250))
-            qDebug()<<"writing to the socket failed";
-
-
+        qDebug() << "written" << writtenBytes << " of " << str.size();
     }
+}
+
+void CommClient::bytesWritten(qint64 bytenum){
+    qDebug() << "writingFinished" << bytenum;
+    written = true;
 }
 
 void CommClient::robotConnCallback(const std_msgs::String::ConstPtr &msg){

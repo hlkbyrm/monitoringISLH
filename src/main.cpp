@@ -16,15 +16,18 @@ int main(int argc,char** argv)
 
     QApplication app(argc,argv);
 
-    CommClient commclient;
+    CommClient *commclient = new CommClient();
 
-    RosThread* rosthread = new RosThread(&commclient);
+    RosThread* rosthread = new RosThread(commclient);
 
-    commclient.setRosthread(rosthread);
+    commclient->setRosthread(rosthread);
 
     QThread thr;
+    QThread thr2;
 
     rosthread->moveToThread(&thr);
+
+    commclient->moveToThread(&thr2);
 
     QObject::connect(rosthread,SIGNAL(rosFinished()),&thr,SLOT(quit()));
 

@@ -52,6 +52,8 @@ public:
     RosThread* rosthread;
 
     void sendWaitingMessages();
+
+    QMutex mutex;
 private:
 
     QTcpSocket* socket;
@@ -85,6 +87,8 @@ private:
 
     int numOfRobots;
     int queueSize;
+
+    QMutex mutexWM;
 
     int readConfigFile(QString filename);
 

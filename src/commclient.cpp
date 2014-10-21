@@ -31,6 +31,8 @@ CommClient::CommClient(QObject* parent) :
        qDebug() << "robotID is: "<< robotID;
     }
 
+    qRegisterMetaType<QAbstractSocket::SocketError>("SocketError");
+
     socket = new QTcpSocket(this);
     socket->setReadBufferSize(0);
     connect(socket,SIGNAL(readyRead()),this,SLOT(receiveData()));
@@ -73,6 +75,7 @@ void CommClient::coalInfoCallback(const std_msgs::UInt8::ConstPtr &msg){
     message.append(QString::number((msg->data)));
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
@@ -83,6 +86,7 @@ void CommClient::taskHandlerInfoCallback(const std_msgs::UInt8::ConstPtr &msg){
     message.append(QString::number((msg->data)));
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
@@ -97,6 +101,7 @@ void CommClient::timerTick(const ros::TimerEvent&){
     message.append(QString::number((batteryLevel())));
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
@@ -144,21 +149,35 @@ void CommClient::robotPoseCallback(const ISLH_msgs::robotPose::ConstPtr &msg){
     message.append(QString::number(msg->calYaw));
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
 void CommClient::sendWaitingMessages(){
+    QMutexLocker ml(&mutex);
+
     if(waitingMessages.count() == 0) return;
-    QStringList _waitingMessages = QStringList(waitingMessages);
+    QStringList _waitingMessages;
+
+    foreach(QString str,waitingMessages)
+        _waitingMessages.push_back(str);
+
     waitingMessages.clear();
+
+    ml.unlock();
 
     for(int i=0;i<_waitingMessages.count();i++){
         qDebug()<<"writing";
-        QByteArray byteArray(_waitingMessages.at(i).toLatin1());
-        socket->write(byteArray); //write the data itself
+        QByteArray byteArray = QByteArray(_waitingMessages.at(i).toLatin1());
+        int writtenBytes = socket->write(byteArray);
         qDebug() << _waitingMessages[i];
-        //bool asd = socket->waitForBytesWritten(500);
-        qDebug() << "written";
+
+        qDebug() << "written" <<writtenBytes<<" of "<<_waitingMessages.at(i).size();
+
+        if (!socket->waitForBytesWritten(250))
+            qDebug()<<"writing to the socket failed";
+
+
     }
 }
 
@@ -169,6 +188,7 @@ void CommClient::robotConnCallback(const std_msgs::String::ConstPtr &msg){
     message.append(QString::fromStdString(msg->data));
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
@@ -271,6 +291,7 @@ void CommClient::taskInfoCallback(const ISLH_msgs::taskInfo2MonitorMessage::Cons
         message.append("<EOF>");
     }
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 
@@ -282,6 +303,7 @@ void CommClient::leaderInfoCallback(const std_msgs::Int8MultiArray::ConstPtr &ms
     }
     message.append("<EOF>");
 
+    QMutexLocker ml(&mutex);
     waitingMessages.push_back(message);
 }
 

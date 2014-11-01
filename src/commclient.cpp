@@ -60,7 +60,7 @@ void CommClient::setRosthread(RosThread* rosthread){
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",queueSize,&CommClient::robotInfoCallbackKobuki,this);
     else
         this->robotInfoSub = this->rosthread->n.subscribe("/mobile_base/sensors/core",queueSize,&CommClient::robotInfoCallbackTurtlebot,this);
-    this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",queueSize,&CommClient::robotPoseCallback,this);
+    this->robotPoseSub = this->rosthread->n.subscribe("navigationISLH/robotPositionInfo",1,&CommClient::robotPoseCallback,this);
     this->robotConnSub = this->rosthread->n.subscribe("communicationISLH/robotConnectionInfo",queueSize,&CommClient::robotConnCallback,this);
     this->taskInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/taskInfo2Monitor",queueSize,&CommClient::taskInfoCallback,this);
     this->leaderInfoSub = this->rosthread->n.subscribe("taskCoordinatorISLH/leaderIDInfo2Monitor",queueSize,&CommClient::leaderInfoCallback,this);
